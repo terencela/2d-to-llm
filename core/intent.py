@@ -5,27 +5,44 @@ from openai import OpenAI
 
 SYSTEM_PROMPT = """You extract navigation intent from user queries at an airport.
 Return ONLY valid JSON with two keys: "start" and "end".
-Both values are point-of-interest names exactly as a user would say them.
+Both values are point-of-interest names exactly as they appear in the known locations list.
 
 If the user doesn't mention a starting location, set "start" to "unknown".
 If the user doesn't mention a destination, set "end" to "unknown".
 
-Examples:
-- "How do I get from H&M to Check-in 2?" -> {"start": "H&M", "end": "Check-in 2"}
-- "I'm at Gate A15, where is the lounge?" -> {"start": "Gate A15", "end": "Lounge A"}
-- "Take me to baggage claim from Gate B32" -> {"start": "Gate B32", "end": "Baggage Claim"}
+Match user input to the closest known location name. For example:
+- "H and M" or "HM" -> "H&M"
+- "train station" or "SBB" -> "SBB Train Station"
+- "check in" or "checkin 2" -> "Check-in 2"
+- "gate A 15" -> "Gate A15"
+- "baggage" or "luggage" -> "Baggage Claim"
+
+Known locations:
+{poi_names}
 """
+
+
+_poi_names_cache: list[str] | None = None
+
+
+def set_known_pois(names: list[str]) -> None:
+    """Update the list of known POI names for intent matching."""
+    global _poi_names_cache
+    _poi_names_cache = names
 
 
 def parse_intent(text: str) -> dict[str, str]:
     """Extract start and end POIs from a natural language query."""
+    poi_list = "\n".join(f"- {n}" for n in (_poi_names_cache or []))
+    prompt = SYSTEM_PROMPT.format(poi_names=poi_list if poi_list else "No locations loaded yet.")
+
     client = OpenAI()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         temperature=0,
         response_format={"type": "json_object"},
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": prompt},
             {"role": "user", "content": text},
         ],
     )

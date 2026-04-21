@@ -1,0 +1,72 @@
+{
+  "airport": "Zurich Airport (ZRH)",
+  "floors": [
+    {"id": 0, "name": "Underground / Train Station"},
+    {"id": 1, "name": "Arrivals"},
+    {"id": 2, "name": "Departures / Airside Center"}
+  ],
+  "pois": [
+    {"id": "sbb_station", "name": "SBB Train Station", "floor": 0, "type": "transport", "x": 0.50, "y": 0.85},
+    {"id": "elevator_central_0", "name": "Central Elevator (Underground)", "floor": 0, "type": "vertical", "x": 0.50, "y": 0.60},
+
+    {"id": "elevator_central_1", "name": "Central Elevator (Arrivals)", "floor": 1, "type": "vertical", "x": 0.50, "y": 0.60},
+    {"id": "baggage_claim", "name": "Baggage Claim", "floor": 1, "type": "service", "x": 0.60, "y": 0.50},
+    {"id": "arrivals_hall", "name": "Arrivals Hall", "floor": 1, "type": "hall", "x": 0.45, "y": 0.45},
+    {"id": "car_rental", "name": "Car Rental", "floor": 1, "type": "service", "x": 0.30, "y": 0.50},
+    {"id": "escalator_main_1", "name": "Main Escalator (Arrivals)", "floor": 1, "type": "vertical", "x": 0.40, "y": 0.35},
+
+    {"id": "escalator_main_2", "name": "Main Escalator (Departures)", "floor": 2, "type": "vertical", "x": 0.40, "y": 0.35},
+    {"id": "elevator_central_2", "name": "Central Elevator (Departures)", "floor": 2, "type": "vertical", "x": 0.50, "y": 0.60},
+    {"id": "checkin_1", "name": "Check-in 1", "floor": 2, "type": "checkin", "x": 0.25, "y": 0.30},
+    {"id": "checkin_2", "name": "Check-in 2", "floor": 2, "type": "checkin", "x": 0.45, "y": 0.30},
+    {"id": "checkin_3", "name": "Check-in 3", "floor": 2, "type": "checkin", "x": 0.65, "y": 0.30},
+    {"id": "migros", "name": "Migros", "floor": 2, "type": "shop", "x": 0.55, "y": 0.45},
+    {"id": "hm", "name": "H&M", "floor": 2, "type": "shop", "x": 0.35, "y": 0.45},
+    {"id": "pharmacy", "name": "Pharmacy", "floor": 2, "type": "shop", "x": 0.42, "y": 0.42},
+    {"id": "currency_exchange", "name": "Currency Exchange", "floor": 2, "type": "service", "x": 0.48, "y": 0.42},
+    {"id": "security_a", "name": "Security Screening", "floor": 2, "type": "security", "x": 0.45, "y": 0.20},
+    {"id": "duty_free", "name": "Duty Free", "floor": 2, "type": "shop", "x": 0.45, "y": 0.12},
+    {"id": "gate_a15", "name": "Gate A15", "floor": 2, "type": "gate", "x": 0.30, "y": 0.05},
+    {"id": "gate_a22", "name": "Gate A22", "floor": 2, "type": "gate", "x": 0.55, "y": 0.05},
+    {"id": "lounge_a", "name": "Lounge A", "floor": 2, "type": "lounge", "x": 0.42, "y": 0.02},
+    {"id": "skymetro_a", "name": "Skymetro (Airside Center)", "floor": 2, "type": "transport", "x": 0.60, "y": 0.10},
+    {"id": "skymetro_b", "name": "Skymetro (Terminal E)", "floor": 2, "type": "transport", "x": 0.85, "y": 0.10},
+    {"id": "gate_b32", "name": "Gate B32", "floor": 2, "type": "gate", "x": 0.80, "y": 0.05},
+    {"id": "gate_b44", "name": "Gate B44", "floor": 2, "type": "gate", "x": 0.90, "y": 0.05}
+  ],
+  "adjacencies": [
+    {"from": "sbb_station", "to": "elevator_central_0", "type": "hallway", "distance_m": 80, "bidirectional": true},
+
+    {"from": "elevator_central_0", "to": "elevator_central_1", "type": "elevator", "distance_m": 0, "bidirectional": true},
+    {"from": "elevator_central_1", "to": "elevator_central_2", "type": "elevator", "distance_m": 0, "bidirectional": true},
+    {"from": "escalator_main_1", "to": "escalator_main_2", "type": "escalator", "distance_m": 0, "bidirectional": true},
+
+    {"from": "elevator_central_1", "to": "arrivals_hall", "type": "hallway", "distance_m": 30, "bidirectional": true},
+    {"from": "arrivals_hall", "to": "baggage_claim", "type": "hallway", "distance_m": 60, "bidirectional": true},
+    {"from": "arrivals_hall", "to": "car_rental", "type": "hallway", "distance_m": 50, "bidirectional": true},
+    {"from": "arrivals_hall", "to": "escalator_main_1", "type": "hallway", "distance_m": 40, "bidirectional": true},
+
+    {"from": "escalator_main_2", "to": "checkin_1", "type": "hallway", "distance_m": 50, "bidirectional": true},
+    {"from": "escalator_main_2", "to": "hm", "type": "hallway", "distance_m": 30, "bidirectional": true},
+    {"from": "elevator_central_2", "to": "checkin_2", "type": "hallway", "distance_m": 40, "bidirectional": true},
+    {"from": "elevator_central_2", "to": "currency_exchange", "type": "hallway", "distance_m": 20, "bidirectional": true},
+    {"from": "checkin_1", "to": "checkin_2", "type": "hallway", "distance_m": 80, "bidirectional": true},
+    {"from": "checkin_2", "to": "checkin_3", "type": "hallway", "distance_m": 80, "bidirectional": true},
+    {"from": "hm", "to": "pharmacy", "type": "hallway", "distance_m": 25, "bidirectional": true},
+    {"from": "pharmacy", "to": "currency_exchange", "type": "hallway", "distance_m": 20, "bidirectional": true},
+    {"from": "currency_exchange", "to": "migros", "type": "hallway", "distance_m": 30, "bidirectional": true},
+    {"from": "checkin_2", "to": "security_a", "type": "hallway", "distance_m": 60, "bidirectional": true, "notes": "Requires boarding pass"},
+    {"from": "security_a", "to": "duty_free", "type": "hallway", "distance_m": 50, "bidirectional": false, "notes": "One-way past security"},
+    {"from": "duty_free", "to": "gate_a15", "type": "hallway", "distance_m": 120, "bidirectional": true},
+    {"from": "duty_free", "to": "gate_a22", "type": "hallway", "distance_m": 100, "bidirectional": true},
+    {"from": "duty_free", "to": "lounge_a", "type": "hallway", "distance_m": 90, "bidirectional": true},
+    {"from": "gate_a15", "to": "gate_a22", "type": "hallway", "distance_m": 80, "bidirectional": true},
+    {"from": "gate_a22", "to": "lounge_a", "type": "hallway", "distance_m": 60, "bidirectional": true},
+    {"from": "duty_free", "to": "skymetro_a", "type": "hallway", "distance_m": 70, "bidirectional": true},
+    {"from": "skymetro_a", "to": "skymetro_b", "type": "skymetro", "distance_m": 0, "bidirectional": true, "notes": "2-minute automated shuttle"},
+    {"from": "skymetro_b", "to": "gate_b32", "type": "hallway", "distance_m": 100, "bidirectional": true},
+    {"from": "skymetro_b", "to": "gate_b44", "type": "hallway", "distance_m": 150, "bidirectional": true},
+    {"from": "gate_b32", "to": "gate_b44", "type": "hallway", "distance_m": 80, "bidirectional": true},
+    {"from": "checkin_3", "to": "migros", "type": "hallway", "distance_m": 40, "bidirectional": true}
+  ]
+}

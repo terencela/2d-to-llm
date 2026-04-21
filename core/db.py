@@ -22,6 +22,16 @@ def get_collection() -> chromadb.Collection:
     return _collection
 
 
+def reset_collection() -> None:
+    """Drop and recreate the routes collection."""
+    global _client, _collection
+    if _client is None:
+        _client = chromadb.PersistentClient(path=CHROMA_PATH)
+    _client.delete_collection(COLLECTION_NAME)
+    _collection = None
+    get_collection()
+
+
 def seed_from_json(path: str = "data/seed_routes.json") -> int:
     """Load routes from JSON and upsert into ChromaDB. Returns count of routes seeded."""
     collection = get_collection()
@@ -68,3 +78,7 @@ def query_by_text(query: str, n_results: int = 1) -> str | None:
     if results["documents"] and results["documents"][0]:
         return results["documents"][0][0]
     return None
+
+
+def get_route_count() -> int:
+    return get_collection().count()
