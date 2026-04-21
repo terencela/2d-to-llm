@@ -2,9 +2,12 @@
 
 import base64
 import json
+import re
 from pathlib import Path
 
-from openai import OpenAI
+from core.config import get_openai_client, get_logger
+
+log = get_logger("vlm")
 
 
 EXTRACTION_PROMPT = """You are analyzing a 2D floor plan image of an airport terminal.
@@ -44,10 +47,24 @@ Rules:
 """
 
 
+def _extract_json(text: str) -> dict:
+    """Extract JSON from VLM response, handling markdown fences and preamble."""
+    text = text.strip()
+
+    fence_match = re.search(r"```(?:json)?\s*\n(.*?)\n\s*```", text, re.DOTALL)
+    if fence_match:
+        return json.loads(fence_match.group(1))
+
+    brace_match = re.search(r"\{.*\}", text, re.DOTALL)
+    if brace_match:
+        return json.loads(brace_match.group(0))
+
+    return json.loads(text)
+
+
 def encode_image(image_path: str) -> str:
     """Read image file and return base64 string."""
-    data = Path(image_path).read_bytes()
-    return base64.b64encode(data).decode("utf-8")
+    return base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
 
 
 def extract_pois_from_image(
@@ -56,11 +73,13 @@ def extract_pois_from_image(
     model: str = "gpt-4o",
 ) -> dict:
     """Send floor plan image to VLM and extract structured POI + adjacency data."""
-    client = OpenAI()
+    client = get_openai_client()
     b64_image = encode_image(image_path)
 
-    suffix = image_path.rsplit(".", 1)[-1].lower()
-    media_type = "image/png" if suffix == "png" else "image/jpeg"
+    suffix = Path(image_path).suffix.lower()
+    media_type = "image/png" if suffix == ".png" else "image/jpeg"
+
+    log.info("Extracting POIs from %s (floor %d, model %s)", image_path, floor_number, model)
 
     response = client.chat.completions.create(
         model=model,
@@ -88,15 +107,16 @@ def extract_pois_from_image(
     )
 
     content = response.choices[0].message.content or "{}"
-    content = content.strip()
-    if content.startswith("```"):
-        content = content.split("\n", 1)[1].rsplit("```", 1)[0]
-
-    extracted = json.loads(content)
+    extracted = _extract_json(content)
 
     for poi in extracted.get("pois", []):
         poi["floor"] = floor_number
 
+    log.info(
+        "Extracted %d POIs, %d adjacencies",
+        len(extracted.get("pois", [])),
+        len(extracted.get("adjacencies", [])),
+    )
     return extracted
 
 
@@ -113,9 +133,6 @@ def compare_with_manual(
     missed = manual_poi_names - vlm_poi_names
     extra = vlm_poi_names - manual_poi_names
 
-    manual_adj_count = len(manual.get("adjacencies", []))
-    vlm_adj_count = len(vlm_data.get("adjacencies", []))
-
     return {
         "manual_pois": len(manual_poi_names),
         "vlm_pois": len(vlm_poi_names),
@@ -123,8 +140,8 @@ def compare_with_manual(
         "matched_names": sorted(matched),
         "missed_by_vlm": sorted(missed),
         "extra_in_vlm": sorted(extra),
-        "manual_adjacencies": manual_adj_count,
-        "vlm_adjacencies": vlm_adj_count,
+        "manual_adjacencies": len(manual.get("adjacencies", [])),
+        "vlm_adjacencies": len(vlm_data.get("adjacencies", [])),
         "poi_recall": round(len(matched) / max(len(manual_poi_names), 1) * 100, 1),
     }
 

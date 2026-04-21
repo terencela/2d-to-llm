@@ -2,11 +2,14 @@
 
 from dataclasses import dataclass
 
+from core.config import get_logger
 from core.db import query_by_pois, query_by_text
 from core.graph import AirportGraph
 from core.intent import parse_intent
 from core.transcribe import transcribe_audio
 from core.tts import text_to_speech
+
+log = get_logger("pipeline")
 
 
 @dataclass
@@ -17,6 +20,7 @@ class PipelineResult:
     route_text: str
     audio_path: str | None
     floor_info: str = ""
+    error: str = ""
 
 
 NO_ROUTE_MSG = (
@@ -37,16 +41,18 @@ def set_graph(graph: AirportGraph) -> None:
     _graph = graph
 
 
-def _resolve_poi_name(name: str) -> str | None:
-    """Try to match a spoken name to a graph POI, return the canonical name."""
+def _resolve_poi_name(name: str) -> str:
+    """Match a spoken name to a graph POI. Returns canonical name or original input."""
     if _graph is None:
         return name
     poi = _graph.find_poi_by_name(name)
-    return poi.name if poi else None
+    if poi:
+        return poi.name
+    log.warning("Could not resolve POI name: '%s'", name)
+    return name
 
 
 def _get_floor_info(start_name: str, end_name: str) -> str:
-    """Return floor context string for the route."""
     if _graph is None:
         return ""
     start_poi = _graph.find_poi_by_name(start_name)
@@ -59,26 +65,31 @@ def _get_floor_info(start_name: str, end_name: str) -> str:
 
 
 def _retrieve_route(start: str, end: str, raw_query: str) -> str:
-    """Try metadata match first, then semantic search, then graph-based chaining."""
     route = query_by_pois(start, end)
     if route:
+        log.info("Exact metadata match: %s -> %s", start, end)
         return route
 
     route = query_by_text(raw_query)
     if route:
+        log.info("Semantic fallback match for: %s", raw_query[:80])
         return route
 
+    log.warning("No route found: %s -> %s", start, end)
     return NO_ROUTE_MSG
 
 
 def run_voice(audio_path: str) -> PipelineResult:
     """Full pipeline from audio input."""
+    log.info("Voice pipeline started")
     transcript = transcribe_audio(audio_path)
+    log.info("Transcription: %s", transcript)
     return _run_from_text(transcript)
 
 
 def run_text(text: str) -> PipelineResult:
     """Full pipeline from text input (skips Whisper)."""
+    log.info("Text pipeline: %s", text[:80])
     return _run_from_text(text)
 
 
@@ -86,6 +97,7 @@ def _run_from_text(text: str) -> PipelineResult:
     intent = parse_intent(text)
     start = intent["start"]
     end = intent["end"]
+    log.info("Parsed intent: %s -> %s", start, end)
 
     if start == "unknown" or end == "unknown":
         return PipelineResult(
@@ -96,20 +108,18 @@ def _run_from_text(text: str) -> PipelineResult:
             audio_path=None,
         )
 
-    resolved_start = _resolve_poi_name(start)
-    resolved_end = _resolve_poi_name(end)
-
-    display_start = resolved_start or start
-    display_end = resolved_end or end
+    display_start = _resolve_poi_name(start)
+    display_end = _resolve_poi_name(end)
     floor_info = _get_floor_info(display_start, display_end)
-
     route_text = _retrieve_route(display_start, display_end, text)
 
     audio_path = None
+    error = ""
     try:
         audio_path = text_to_speech(route_text)
-    except Exception:
-        pass
+    except Exception as exc:
+        error = f"TTS failed: {exc}"
+        log.error("TTS generation failed: %s", exc)
 
     return PipelineResult(
         transcript=text,
@@ -118,4 +128,5 @@ def _run_from_text(text: str) -> PipelineResult:
         route_text=route_text,
         audio_path=audio_path,
         floor_info=floor_info,
+        error=error,
     )

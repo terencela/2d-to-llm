@@ -5,8 +5,11 @@ from pathlib import Path
 
 from openai import OpenAI
 
+from core.config import get_logger, get_openai_client
 from core.db import get_collection
 from core.graph import AirportGraph, load_graph
+
+log = get_logger("compiler")
 
 
 SEGMENT_PROMPT = """You write short walking directions inside an airport.
@@ -52,7 +55,7 @@ def generate_segment_text(
 
 def compile_segments(graph: AirportGraph) -> dict[str, str]:
     """Generate route text for every adjacent pair. Returns {edge_key: text}."""
-    client = OpenAI()
+    client = get_openai_client()
     segments: dict[str, str] = {}
     pairs = graph.get_adjacent_pairs()
 
@@ -74,7 +77,7 @@ def compile_segments(graph: AirportGraph) -> dict[str, str]:
             notes=edge.notes,
         )
         segments[key] = text
-        print(f"  [{i+1}/{len(pairs)}] {from_poi.name} -> {to_poi.name}")
+        log.info("[%d/%d] %s -> %s", i + 1, len(pairs), from_poi.name, to_poi.name)
 
     return segments
 
@@ -167,35 +170,31 @@ def save_compiled_data(
     Path(f"{output_dir}/compiled_segments.json").write_text(
         json.dumps(segments, indent=2)
     )
-
-    serializable_routes = [
-        {k: v for k, v in r.items()} for r in routes
-    ]
     Path(f"{output_dir}/compiled_routes.json").write_text(
-        json.dumps(serializable_routes, indent=2)
+        json.dumps(routes, indent=2)
     )
 
 
 def run_compiler(config_path: str = "data/airport_config.json") -> dict:
     """Full compilation pipeline. Returns summary stats."""
-    print("Loading airport graph...")
+    log.info("Loading airport graph...")
     graph = load_graph(config_path)
-    print(f"  {len(graph.pois)} POIs, {len(graph.edges)} edges")
+    log.info("%d POIs, %d edges", len(graph.pois), len(graph.edges))
 
-    print("\nGenerating segment texts (LLM calls)...")
+    log.info("Generating segment texts (LLM calls)...")
     segments = compile_segments(graph)
-    print(f"  Generated {len(segments)} segments")
+    log.info("Generated %d segments", len(segments))
 
-    print("\nChaining routes for all reachable pairs...")
+    log.info("Chaining routes for all reachable pairs...")
     routes = compile_all_routes(graph, segments)
-    print(f"  Built {len(routes)} full routes")
+    log.info("Built %d full routes", len(routes))
 
-    print("\nSaving compiled data...")
+    log.info("Saving compiled data...")
     save_compiled_data(segments, routes)
 
-    print("\nPushing to ChromaDB...")
+    log.info("Pushing to ChromaDB...")
     count = push_to_chromadb(routes)
-    print(f"  Upserted {count} routes")
+    log.info("Upserted %d routes", count)
 
     return {
         "pois": len(graph.pois),

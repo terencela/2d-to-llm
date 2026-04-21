@@ -23,11 +23,14 @@ def get_collection() -> chromadb.Collection:
 
 
 def reset_collection() -> None:
-    """Drop and recreate the routes collection."""
+    """Drop and recreate the routes collection. Safe if collection doesn't exist."""
     global _client, _collection
     if _client is None:
         _client = chromadb.PersistentClient(path=CHROMA_PATH)
-    _client.delete_collection(COLLECTION_NAME)
+    try:
+        _client.delete_collection(COLLECTION_NAME)
+    except ValueError:
+        pass
     _collection = None
     get_collection()
 

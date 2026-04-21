@@ -1,11 +1,13 @@
 """Zurich Airport Wayfinding - Voice, Text, and Map Compiler interface."""
 
+import atexit
 import json
 from pathlib import Path
 
 import gradio as gr
 from dotenv import load_dotenv
 
+from core.config import get_logger, cleanup_temp_files
 from core.db import seed_from_json, get_collection, get_route_count, reset_collection
 from core.graph import load_graph
 from core.intent import set_known_pois
@@ -13,6 +15,7 @@ from core.pipeline import run_voice, run_text, set_graph
 
 load_dotenv()
 
+log = get_logger("app")
 _current_graph = None
 
 
@@ -29,9 +32,11 @@ def init_app() -> None:
     collection = get_collection()
     if collection.count() == 0:
         if Path("data/compiled_routes.json").exists():
-            _seed_compiled_routes()
+            count = _seed_compiled_routes()
+            log.info("Seeded %d compiled routes", count)
         elif Path("data/seed_routes.json").exists():
-            seed_from_json()
+            count = seed_from_json()
+            log.info("Seeded %d demo routes", count)
 
 
 def _seed_compiled_routes() -> int:
@@ -278,6 +283,7 @@ def build_ui() -> gr.Blocks:
 
 
 if __name__ == "__main__":
+    atexit.register(cleanup_temp_files)
     init_app()
     demo = build_ui()
     demo.launch()

@@ -1,7 +1,8 @@
 import json
 
-from openai import OpenAI
+from core.config import get_openai_client, get_logger
 
+log = get_logger("intent")
 
 SYSTEM_PROMPT = """You extract navigation intent from user queries at an airport.
 Return ONLY valid JSON with two keys: "start" and "end".
@@ -29,6 +30,7 @@ def set_known_pois(names: list[str]) -> None:
     """Update the list of known POI names for intent matching."""
     global _poi_names_cache
     _poi_names_cache = names
+    log.info("Loaded %d known POI names", len(names))
 
 
 def parse_intent(text: str) -> dict[str, str]:
@@ -36,7 +38,7 @@ def parse_intent(text: str) -> dict[str, str]:
     poi_list = "\n".join(f"- {n}" for n in (_poi_names_cache or []))
     prompt = SYSTEM_PROMPT.format(poi_names=poi_list if poi_list else "No locations loaded yet.")
 
-    client = OpenAI()
+    client = get_openai_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         temperature=0,
@@ -48,7 +50,10 @@ def parse_intent(text: str) -> dict[str, str]:
     )
     content = response.choices[0].message.content or "{}"
     parsed = json.loads(content)
-    return {
+
+    result = {
         "start": parsed.get("start", "unknown"),
         "end": parsed.get("end", "unknown"),
     }
+    log.info("Intent: '%s' -> %s", text[:60], result)
+    return result
