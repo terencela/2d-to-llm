@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# ChromaDB local storage
+chroma_db/
+
+# Environment
+.env
+
+# Audio temp files
+*.wav
+*.mp3
+*.ogg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

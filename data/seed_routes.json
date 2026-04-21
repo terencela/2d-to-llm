@@ -1,0 +1,42 @@
+[
+  {
+    "start": "H&M",
+    "end": "Check-in 2",
+    "route_text": "From H&M, exit the store and turn left. Walk straight past the pharmacy and the currency exchange. Check-in 2 is on your right after about 80 meters, marked with large overhead signs."
+  },
+  {
+    "start": "Check-in 2",
+    "end": "H&M",
+    "route_text": "From Check-in 2, face away from the check-in counters and walk straight ahead. Pass the currency exchange and the pharmacy on your left. H&M will be on your right after about 80 meters."
+  },
+  {
+    "start": "Check-in 2",
+    "end": "Gate A15",
+    "route_text": "From Check-in 2, proceed through passport control straight ahead. After security screening, follow signs for Gates A. Walk along the main corridor for about 200 meters. Gate A15 is on the left side past the duty-free shop."
+  },
+  {
+    "start": "Migros",
+    "end": "SBB Train Station",
+    "route_text": "From Migros on the arrivals level, exit and turn right toward the main terminal hall. Take the escalator down one level to the airport train station. Follow the SBB signs. The platforms are directly below the terminal, about a 4-minute walk."
+  },
+  {
+    "start": "SBB Train Station",
+    "end": "Check-in 2",
+    "route_text": "From the SBB train platform, take the escalator up to the terminal level. Follow signs for Departures. Walk straight through the main hall for about 150 meters. Check-in 2 is on the left side, marked with large overhead signs."
+  },
+  {
+    "start": "Gate A15",
+    "end": "Lounge A",
+    "route_text": "From Gate A15, walk back toward the main A-gates corridor. Turn right and continue for about 100 meters. Lounge A is on the upper level, take the elevator next to the watch shop. The lounge entrance is immediately to your right."
+  },
+  {
+    "start": "Lounge A",
+    "end": "Gate B32",
+    "route_text": "From Lounge A, take the elevator down to the A-gates corridor. Turn left and follow signs for the Skymetro shuttle to Terminal B. Ride the Skymetro for about 2 minutes. Exit and follow signs to Gate B32, which is a 3-minute walk to the right."
+  },
+  {
+    "start": "Gate B32",
+    "end": "Baggage Claim",
+    "route_text": "From Gate B32, follow the Arrival signs back through the B-gates corridor. Take the Skymetro shuttle back to the main terminal. Follow Baggage Claim signs downstairs via the escalator. The baggage carousels are on the lower level, about a 5-minute walk total."
+  }
+]
