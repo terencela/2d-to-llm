@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -70,6 +72,35 @@
     }
 
     .directions-text { white-space: pre-line; }
+
+    .leaflet-container { background: #f4f4f5; font-family: 'Geist', system-ui, sans-serif; }
+    .poi-marker {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      font-size: 10px; font-weight: 600; color: white;
+      transition: transform 0.15s ease;
+    }
+    .poi-marker:hover { transform: scale(1.3); z-index: 999 !important; }
+    .poi-marker-gate { background: #0369a1; }
+    .poi-marker-checkin { background: #0d9488; }
+    .poi-marker-shop { background: #d97706; }
+    .poi-marker-restaurant { background: #dc2626; }
+    .poi-marker-service { background: #7c3aed; }
+    .poi-marker-transport { background: #2563eb; }
+    .poi-marker-lounge { background: #be185d; }
+    .poi-marker-security { background: #dc2626; }
+    .poi-marker-hall { background: #525252; }
+    .poi-marker-vertical { background: #737373; }
+    .poi-marker-unknown { background: #a1a1aa; }
+    .poi-label {
+      font-size: 10px; font-weight: 600; color: #18181b;
+      text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white;
+      white-space: nowrap; pointer-events: none;
+    }
+    .route-preview-popup .leaflet-popup-content-wrapper {
+      border-radius: 12px; padding: 4px;
+    }
   </style>
 </head>
 <body class="h-full bg-surface font-sans text-ink antialiased">
@@ -386,6 +417,55 @@
           </div>
         </div>
 
+        <!-- Map Viewer -->
+        <div class="space-y-3 pt-4 border-t border-border-soft">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-semibold">Airport Map</h3>
+              <p class="text-xs text-muted mt-0.5">POIs, connections, and route preview</p>
+            </div>
+            <div id="map-floor-tabs" class="flex gap-1"></div>
+          </div>
+          <div id="map-container" class="rounded-xl border border-border overflow-hidden" style="height: 420px;"></div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#0369a1] inline-block"></span>Gate</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#0d9488] inline-block"></span>Check-in</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#d97706] inline-block"></span>Shop</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#7c3aed] inline-block"></span>Service</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#2563eb] inline-block"></span>Transport</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#be185d] inline-block"></span>Lounge</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-muted"><span class="w-2.5 h-2.5 rounded-full bg-[#737373] inline-block"></span>Vertical</span>
+          </div>
+        </div>
+
+        <!-- Route Preview -->
+        <div class="space-y-3 pt-4 border-t border-border-soft">
+          <h3 class="text-sm font-semibold">Route Preview</h3>
+          <p class="text-xs text-muted">Select two POIs on the map to preview a route, or use the dropdowns.</p>
+          <div class="flex gap-3">
+            <div class="flex-1">
+              <label class="text-[11px] text-muted font-medium block mb-1">From</label>
+              <select id="route-from" class="w-full h-9 px-3 rounded-lg bg-surface border border-border text-sm focus:outline-none focus:border-accent">
+                <option value="">Select start...</option>
+              </select>
+            </div>
+            <div class="flex-1">
+              <label class="text-[11px] text-muted font-medium block mb-1">To</label>
+              <select id="route-to" class="w-full h-9 px-3 rounded-lg bg-surface border border-border text-sm focus:outline-none focus:border-accent">
+                <option value="">Select destination...</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="btn-preview-route" class="h-9 px-4 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 active:scale-[0.98] transition-all">
+                Preview
+              </button>
+            </div>
+          </div>
+          <div id="route-preview-result" class="hidden rounded-xl bg-surface border border-border-soft p-4 text-sm space-y-2">
+            <div id="route-preview-info"></div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -645,6 +725,221 @@
       setTimeout(() => $('#drawer-overlay').classList.add('hidden'), 300);
     }
 
+    // --- Leaflet Map ---
+    let leafletMap = null;
+    let mapLayers = { pois: null, edges: null, route: null, labels: null };
+    let graphData = null;
+    let currentMapFloor = 2;
+    let routeSelectMode = null;
+
+    const POI_COLORS = {
+      gate: '#0369a1', checkin: '#0d9488', shop: '#d97706', restaurant: '#dc2626',
+      service: '#7c3aed', transport: '#2563eb', lounge: '#be185d',
+      security: '#dc2626', hall: '#525252', vertical: '#737373', unknown: '#a1a1aa',
+    };
+
+    function initMap() {
+      if (leafletMap) return;
+      const container = document.getElementById('map-container');
+      if (!container || container.offsetParent === null) return;
+
+      leafletMap = L.map(container, {
+        crs: L.CRS.Simple,
+        minZoom: -1,
+        maxZoom: 4,
+        zoomSnap: 0.5,
+        attributionControl: false,
+      });
+
+      const bounds = [[0, 0], [1000, 1400]];
+      leafletMap.fitBounds(bounds);
+
+      mapLayers.edges = L.layerGroup().addTo(leafletMap);
+      mapLayers.pois = L.layerGroup().addTo(leafletMap);
+      mapLayers.labels = L.layerGroup().addTo(leafletMap);
+      mapLayers.route = L.layerGroup().addTo(leafletMap);
+
+      loadGraphData();
+    }
+
+    async function loadGraphData() {
+      try {
+        const res = await fetch(`${API}/api/admin/graph`);
+        graphData = await res.json();
+        renderFloorTabs();
+        populateRouteDropdowns();
+        renderMap(currentMapFloor);
+      } catch (e) {
+        console.error('Failed to load graph:', e);
+      }
+    }
+
+    function renderFloorTabs() {
+      const container = $('#map-floor-tabs');
+      container.innerHTML = graphData.floors.map(f => `
+        <button class="floor-tab h-7 px-3 rounded-md text-[11px] font-medium transition-all ${f.id === currentMapFloor ? 'bg-accent text-white' : 'bg-zinc-100 text-faded hover:bg-zinc-200'}"
+          data-floor="${f.id}">${f.name.split('/')[0].trim()}</button>
+      `).join('');
+
+      container.querySelectorAll('.floor-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentMapFloor = parseInt(btn.dataset.floor);
+          renderFloorTabs();
+          renderMap(currentMapFloor);
+        });
+      });
+    }
+
+    function toMapCoords(x, y) {
+      return [1000 - y * 1000, x * 1400];
+    }
+
+    function renderMap(floor) {
+      if (!leafletMap || !graphData) return;
+
+      mapLayers.edges.clearLayers();
+      mapLayers.pois.clearLayers();
+      mapLayers.labels.clearLayers();
+
+      const floorPois = graphData.pois.filter(p => p.floor === floor);
+      const floorPoiIds = new Set(floorPois.map(p => p.id));
+      const poiMap = {};
+      graphData.pois.forEach(p => poiMap[p.id] = p);
+
+      graphData.edges.forEach(e => {
+        const fromOnFloor = floorPoiIds.has(e.from);
+        const toOnFloor = floorPoiIds.has(e.to);
+        if (!fromOnFloor && !toOnFloor) return;
+
+        const fp = poiMap[e.from];
+        const tp = poiMap[e.to];
+        if (!fp || !tp) return;
+
+        const isVertical = e.type === 'elevator' || e.type === 'escalator' || e.type === 'skymetro';
+        const color = isVertical ? '#a1a1aa' : '#d4d4d8';
+        const dash = isVertical ? '6, 4' : '';
+        const weight = isVertical ? 1.5 : 1;
+
+        L.polyline([toMapCoords(fp.x, fp.y), toMapCoords(tp.x, tp.y)], {
+          color, weight, dashArray: dash, opacity: 0.6,
+        }).addTo(mapLayers.edges);
+      });
+
+      floorPois.forEach(p => {
+        const size = p.type === 'vertical' ? 16 : 22;
+        const icon = L.divIcon({
+          className: `poi-marker poi-marker-${p.type}`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          html: p.type === 'gate' ? p.name.replace('Gate ', '') : '',
+        });
+
+        const marker = L.marker(toMapCoords(p.x, p.y), { icon })
+          .addTo(mapLayers.pois);
+
+        marker.bindPopup(`
+          <div style="font-family: Geist, system-ui; font-size: 12px; min-width: 120px;">
+            <strong>${p.name}</strong><br/>
+            <span style="color: #71717a; font-size: 11px;">${p.type} &middot; Floor ${p.floor}</span><br/>
+            <div style="margin-top: 6px; display: flex; gap: 4px;">
+              <button onclick="setRouteFrom('${p.id}')" style="font-size: 10px; padding: 2px 8px; border-radius: 6px; border: 1px solid #e4e4e7; background: white; cursor: pointer;">From here</button>
+              <button onclick="setRouteTo('${p.id}')" style="font-size: 10px; padding: 2px 8px; border-radius: 6px; border: 1px solid #e4e4e7; background: white; cursor: pointer;">Go here</button>
+            </div>
+          </div>
+        `, { className: 'route-preview-popup' });
+
+        if (p.type !== 'vertical') {
+          const label = L.divIcon({
+            className: 'poi-label',
+            html: p.name,
+            iconSize: [0, 0],
+            iconAnchor: [-14, 4],
+          });
+          L.marker(toMapCoords(p.x, p.y), { icon: label, interactive: false })
+            .addTo(mapLayers.labels);
+        }
+      });
+
+      const padding = 60;
+      if (floorPois.length > 0) {
+        const coords = floorPois.map(p => toMapCoords(p.x, p.y));
+        leafletMap.fitBounds(coords, { padding: [padding, padding] });
+      }
+    }
+
+    function setRouteFrom(poiId) {
+      $('#route-from').value = poiId;
+      leafletMap.closePopup();
+    }
+
+    function setRouteTo(poiId) {
+      $('#route-to').value = poiId;
+      leafletMap.closePopup();
+    }
+
+    function populateRouteDropdowns() {
+      if (!graphData) return;
+      const pois = graphData.pois.filter(p => p.type !== 'vertical').sort((a, b) => a.name.localeCompare(b.name));
+      const options = pois.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+      $('#route-from').innerHTML = '<option value="">Select start...</option>' + options;
+      $('#route-to').innerHTML = '<option value="">Select destination...</option>' + options;
+    }
+
+    async function previewRoute() {
+      const from = $('#route-from').value;
+      const to = $('#route-to').value;
+      if (!from || !to) return;
+
+      mapLayers.route.clearLayers();
+
+      try {
+        const res = await fetch(`${API}/api/route?start=${encodeURIComponent(from)}&end=${encodeURIComponent(to)}`);
+        if (!res.ok) throw new Error('No route found');
+        const data = await res.json();
+
+        const coords = data.waypoints.map(w => toMapCoords(w.x, w.y));
+
+        L.polyline(coords, {
+          color: '#0369a1', weight: 4, opacity: 0.9,
+          lineCap: 'round', lineJoin: 'round',
+        }).addTo(mapLayers.route);
+
+        const startW = data.waypoints[0];
+        const endW = data.waypoints[data.waypoints.length - 1];
+
+        L.circleMarker(toMapCoords(startW.x, startW.y), {
+          radius: 8, color: '#16a34a', fillColor: '#22c55e', fillOpacity: 1, weight: 2,
+        }).bindTooltip('Start', { permanent: true, direction: 'top', offset: [0, -10], className: 'poi-label' })
+          .addTo(mapLayers.route);
+
+        L.circleMarker(toMapCoords(endW.x, endW.y), {
+          radius: 8, color: '#dc2626', fillColor: '#ef4444', fillOpacity: 1, weight: 2,
+        }).bindTooltip('End', { permanent: true, direction: 'top', offset: [0, -10], className: 'poi-label' })
+          .addTo(mapLayers.route);
+
+        leafletMap.fitBounds(coords, { padding: [60, 60] });
+
+        const floorsOnRoute = [...new Set(data.waypoints.map(w => w.floor))];
+        const stops = data.waypoints.filter(w => w.type !== 'vertical').map(w => w.name);
+
+        const resultEl = $('#route-preview-result');
+        resultEl.classList.remove('hidden');
+        $('#route-preview-info').innerHTML = `
+          <p class="font-medium">${startW.name} &rarr; ${endW.name}</p>
+          <p class="text-xs text-muted">${data.waypoints.length} waypoints &middot; ${floorsOnRoute.length > 1 ? floorsOnRoute.length + ' floors' : 'Same floor'}</p>
+          <p class="text-xs text-faded mt-1">Via: ${stops.join(' &rarr; ')}</p>
+        `;
+      } catch (err) {
+        mapLayers.route.clearLayers();
+        const resultEl = $('#route-preview-result');
+        resultEl.classList.remove('hidden');
+        $('#route-preview-info').innerHTML = `<p class="text-red-600 text-sm">${err.message}</p>`;
+      }
+    }
+
+    $('#btn-preview-route')?.addEventListener('click', previewRoute);
+
     // --- Admin Panel ---
     let adminOpen = false;
     let lastUploadedFile = null;
@@ -656,7 +951,10 @@
         panel.classList.remove('hidden');
         loadAdminStats();
         loadMaps();
-        panel.scrollIntoView({ behavior: 'smooth' });
+        requestAnimationFrame(() => {
+          initMap();
+          panel.scrollIntoView({ behavior: 'smooth' });
+        });
       } else {
         panel.classList.add('hidden');
       }
@@ -817,6 +1115,7 @@
         $('#compile-loading').classList.add('hidden');
         $('#compile-result').classList.remove('hidden');
 
+        const t = s.timing || {};
         $('#compile-output').innerHTML = `
           <p class="font-medium text-green-700">Compilation complete</p>
           <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
@@ -826,6 +1125,13 @@
             <span class="text-muted">Full routes built</span><span class="font-medium tabular-nums">${s.routes}</span>
             <span class="text-muted">Routes in database</span><span class="font-medium tabular-nums">${s.stored}</span>
           </div>
+          ${t.total_sec ? `
+          <div class="mt-3 pt-2 border-t border-border-soft grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <span class="text-muted">LLM segments</span><span class="font-medium tabular-nums">${t.segments_sec}s (${t.avg_segment_sec}s/each)</span>
+            <span class="text-muted">Route chaining</span><span class="font-medium tabular-nums">${t.chaining_sec}s</span>
+            <span class="text-muted">Database push</span><span class="font-medium tabular-nums">${t.db_sec}s</span>
+            <span class="text-muted font-semibold">Total</span><span class="font-semibold tabular-nums">${t.total_sec}s</span>
+          </div>` : ''}
         `;
 
         loadAdminStats();

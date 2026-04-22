@@ -176,25 +176,41 @@ def save_compiled_data(
 
 
 def run_compiler(config_path: str = "data/airport_config.json") -> dict:
-    """Full compilation pipeline. Returns summary stats."""
+    """Full compilation pipeline. Returns summary stats with timing."""
+    import time
+
+    t_start = time.monotonic()
+
     log.info("Loading airport graph...")
     graph = load_graph(config_path)
     log.info("%d POIs, %d edges", len(graph.pois), len(graph.edges))
 
+    t_segments = time.monotonic()
     log.info("Generating segment texts (LLM calls)...")
     segments = compile_segments(graph)
-    log.info("Generated %d segments", len(segments))
+    t_segments_done = time.monotonic()
+    segment_sec = round(t_segments_done - t_segments, 1)
+    log.info("Generated %d segments in %.1fs (%.1fs/segment)",
+             len(segments), segment_sec,
+             segment_sec / max(len(segments), 1))
 
+    t_chain = time.monotonic()
     log.info("Chaining routes for all reachable pairs...")
     routes = compile_all_routes(graph, segments)
-    log.info("Built %d full routes", len(routes))
+    t_chain_done = time.monotonic()
+    log.info("Built %d full routes in %.1fs", len(routes), t_chain_done - t_chain)
 
     log.info("Saving compiled data...")
     save_compiled_data(segments, routes)
 
+    t_db = time.monotonic()
     log.info("Pushing to ChromaDB...")
     count = push_to_chromadb(routes)
-    log.info("Upserted %d routes", count)
+    t_db_done = time.monotonic()
+    log.info("Upserted %d routes in %.1fs", count, t_db_done - t_db)
+
+    total_sec = round(time.monotonic() - t_start, 1)
+    log.info("Total compilation: %.1fs", total_sec)
 
     return {
         "pois": len(graph.pois),
@@ -202,4 +218,11 @@ def run_compiler(config_path: str = "data/airport_config.json") -> dict:
         "segments": len(segments),
         "routes": len(routes),
         "stored": count,
+        "timing": {
+            "segments_sec": segment_sec,
+            "avg_segment_sec": round(segment_sec / max(len(segments), 1), 2),
+            "chaining_sec": round(t_chain_done - t_chain, 1),
+            "db_sec": round(t_db_done - t_db, 1),
+            "total_sec": total_sec,
+        },
     }

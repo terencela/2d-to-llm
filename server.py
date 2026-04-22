@@ -258,6 +258,83 @@ def get_config():
     return json.loads(config_path.read_text())
 
 
+@app.get("/api/admin/graph")
+def get_graph_data():
+    """Return full graph for Leaflet visualization: POIs with coords, edges, floors."""
+    config_path = Path("data/airport_config.json")
+    if not config_path.exists():
+        return {"floors": [], "pois": [], "edges": []}
+
+    config = json.loads(config_path.read_text())
+    floors = config["floors"]
+
+    pois = []
+    for p in config["pois"]:
+        pois.append({
+            "id": p["id"],
+            "name": p["name"],
+            "floor": p["floor"],
+            "type": p.get("type", "unknown"),
+            "x": p.get("x", 0.5),
+            "y": p.get("y", 0.5),
+        })
+
+    edges = []
+    for a in config.get("adjacencies", []):
+        edges.append({
+            "from": a["from"],
+            "to": a["to"],
+            "type": a.get("type", "hallway"),
+            "distance_m": a.get("distance_m", 0),
+            "bidirectional": a.get("bidirectional", True),
+            "notes": a.get("notes", ""),
+        })
+
+    maps = []
+    maps_dir = Path("data/maps")
+    if maps_dir.exists():
+        for f in sorted(maps_dir.iterdir()):
+            if f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
+                maps.append({
+                    "filename": f.name,
+                    "url": f"/api/admin/maps/{f.name}",
+                    "floor": int(f.stem.replace("floor_", "")) if f.stem.startswith("floor_") else -1,
+                })
+
+    return {"floors": floors, "pois": pois, "edges": edges, "maps": maps}
+
+
+@app.get("/api/route")
+def get_route(start: str, end: str):
+    """Return the BFS path between two POI IDs with coordinates for map drawing."""
+    if _graph is None:
+        raise HTTPException(500, "Graph not loaded")
+
+    start_poi = _graph.pois.get(start) or _graph.find_poi_by_name(start)
+    end_poi = _graph.pois.get(end) or _graph.find_poi_by_name(end)
+
+    if not start_poi or not end_poi:
+        raise HTTPException(404, f"POI not found: {start if not start_poi else end}")
+
+    path = _graph.find_path(start_poi.id, end_poi.id)
+    if not path:
+        raise HTTPException(404, "No route found")
+
+    waypoints = []
+    for pid in path:
+        p = _graph.pois[pid]
+        waypoints.append({
+            "id": p.id,
+            "name": p.name,
+            "floor": p.floor,
+            "type": p.poi_type,
+            "x": p.x,
+            "y": p.y,
+        })
+
+    return {"path": path, "waypoints": waypoints}
+
+
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 
