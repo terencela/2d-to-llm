@@ -273,10 +273,121 @@
     <!-- Footer -->
     <footer class="px-5 py-4 border-t border-border-soft">
       <div class="max-w-lg mx-auto flex items-center justify-between">
-        <p class="text-[11px] text-muted">Prototype - Not for production use</p>
         <button id="btn-locations" class="text-[11px] text-accent font-medium hover:underline">View locations</button>
+        <button id="btn-toggle-admin" class="text-[11px] text-muted hover:text-faded transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline -mt-0.5 mr-0.5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          Admin
+        </button>
       </div>
     </footer>
+
+    <!-- Admin Panel -->
+    <section id="admin-panel" class="hidden border-t border-border bg-white">
+      <div class="max-w-2xl mx-auto px-5 py-6 space-y-6">
+
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-semibold tracking-tight">Creator Panel</h2>
+            <p class="text-xs text-muted mt-0.5">Upload maps, extract POIs, compile routes</p>
+          </div>
+          <div id="admin-stats" class="text-right">
+            <p class="text-xs text-muted">Loading stats...</p>
+          </div>
+        </div>
+
+        <!-- Step indicators -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-soft text-accent text-[11px] font-semibold">
+            <span>1</span> Upload Map
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2.5" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 text-faded text-[11px] font-semibold">
+            <span>2</span> Extract POIs
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2.5" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 text-faded text-[11px] font-semibold">
+            <span>3</span> Compile Routes
+          </div>
+        </div>
+
+        <!-- Upload map section -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold">Upload Floor Plan</h3>
+          <div id="upload-zone" class="relative border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-accent/40 hover:bg-accent-soft/30 transition-colors cursor-pointer">
+            <input id="map-file-input" type="file" accept="image/png,image/jpeg,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div class="space-y-2">
+              <div class="w-10 h-10 rounded-full bg-surface mx-auto flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
+                </svg>
+              </div>
+              <p class="text-sm text-faded">Drop a floor plan image or click to browse</p>
+              <p class="text-[11px] text-muted">PNG, JPG, or WebP</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="flex-1">
+              <label class="text-[11px] text-muted font-medium block mb-1">Floor number</label>
+              <input id="admin-floor-num" type="number" value="0" min="0" max="10" class="w-full h-9 px-3 rounded-lg bg-surface border border-border text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30" />
+            </div>
+            <div class="flex-1">
+              <label class="text-[11px] text-muted font-medium block mb-1">Floor name</label>
+              <input id="admin-floor-name" type="text" placeholder="e.g. Departures" class="w-full h-9 px-3 rounded-lg bg-surface border border-border text-sm placeholder:text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Uploaded maps gallery -->
+        <div id="maps-gallery" class="hidden space-y-3">
+          <h3 class="text-sm font-semibold">Uploaded Maps</h3>
+          <div id="maps-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- VLM extraction -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold">Extract POIs from Map</h3>
+            <button id="btn-extract" class="h-8 px-4 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+              Extract with Vision AI
+            </button>
+          </div>
+          <p class="text-xs text-muted">Upload a map first, then click extract to identify POIs and adjacencies using GPT-4o Vision.</p>
+          <div id="extract-result" class="hidden rounded-xl bg-surface border border-border-soft p-4 space-y-2">
+            <div id="extract-summary" class="text-sm"></div>
+            <details class="text-xs">
+              <summary class="text-accent font-medium cursor-pointer hover:underline">View raw JSON</summary>
+              <pre id="extract-json" class="mt-2 p-3 rounded-lg bg-white border border-border text-[11px] overflow-x-auto max-h-60 overflow-y-auto font-mono"></pre>
+            </details>
+          </div>
+        </div>
+
+        <!-- Compile routes -->
+        <div class="space-y-3 pt-2 border-t border-border-soft">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-semibold">Compile Routes</h3>
+              <p class="text-xs text-muted mt-0.5">Generate walking directions for all POI pairs via LLM</p>
+            </div>
+            <button id="btn-compile" class="h-8 px-4 rounded-lg bg-accent text-white text-xs font-medium hover:bg-accent-hover active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              Compile All Routes
+            </button>
+          </div>
+          <div id="compile-result" class="hidden rounded-xl bg-surface border border-border-soft p-4">
+            <div id="compile-output" class="text-sm space-y-1"></div>
+          </div>
+          <div id="compile-loading" class="hidden">
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-surface border border-border-soft">
+              <div class="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+              <div>
+                <p class="text-sm font-medium">Compiling routes...</p>
+                <p class="text-xs text-muted">This calls the LLM for each adjacent pair. May take a few minutes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
 
     <!-- Locations drawer -->
     <div id="drawer-overlay" class="fixed inset-0 bg-black/30 z-40 hidden" style="backdrop-filter: blur(2px)"></div>
@@ -533,6 +644,199 @@
       $('#drawer').style.transform = 'translateY(100%)';
       setTimeout(() => $('#drawer-overlay').classList.add('hidden'), 300);
     }
+
+    // --- Admin Panel ---
+    let adminOpen = false;
+    let lastUploadedFile = null;
+
+    $('#btn-toggle-admin').addEventListener('click', () => {
+      adminOpen = !adminOpen;
+      const panel = $('#admin-panel');
+      if (adminOpen) {
+        panel.classList.remove('hidden');
+        loadAdminStats();
+        loadMaps();
+        panel.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        panel.classList.add('hidden');
+      }
+    });
+
+    async function loadAdminStats() {
+      try {
+        const res = await fetch(`${API}/api/stats`);
+        const data = await res.json();
+        $('#admin-stats').innerHTML = `
+          <p class="text-sm font-semibold tabular-nums">${data.pois} POIs</p>
+          <p class="text-xs text-muted tabular-nums">${data.routes} routes compiled</p>
+        `;
+      } catch {
+        $('#admin-stats').innerHTML = '<p class="text-xs text-muted">Could not load stats</p>';
+      }
+    }
+
+    async function loadMaps() {
+      try {
+        const res = await fetch(`${API}/api/admin/maps`);
+        const maps = await res.json();
+
+        if (maps.length === 0) {
+          $('#maps-gallery').classList.add('hidden');
+          return;
+        }
+
+        $('#maps-gallery').classList.remove('hidden');
+        $('#maps-grid').innerHTML = maps.map(m => `
+          <div class="group relative rounded-xl overflow-hidden border border-border bg-white">
+            <img src="${m.url}" alt="${m.filename}" class="w-full aspect-[4/3] object-cover" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <p class="text-[11px] text-white font-medium truncate">${m.filename}</p>
+              <p class="text-[10px] text-white/70">${m.size_kb} KB</p>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        $('#maps-gallery').classList.add('hidden');
+      }
+    }
+
+    // Map upload
+    const fileInput = $('#map-file-input');
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      lastUploadedFile = file;
+      $('#btn-extract').disabled = false;
+
+      const floorNum = $('#admin-floor-num').value || '0';
+      const floorName = $('#admin-floor-name').value || '';
+
+      const form = new FormData();
+      form.append('file', file);
+      form.append('floor_number', floorNum);
+      form.append('floor_name', floorName);
+
+      try {
+        const uploadZone = $('#upload-zone');
+        uploadZone.querySelector('p').textContent = 'Uploading...';
+
+        const res = await fetch(`${API}/api/admin/maps/upload`, {
+          method: 'POST',
+          body: form,
+        });
+
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+
+        uploadZone.querySelector('p').textContent = `Uploaded: ${data.filename} (${data.size_kb} KB)`;
+
+        loadMaps();
+        loadAdminStats();
+      } catch (err) {
+        $('#upload-zone').querySelector('p').textContent = `Upload failed: ${err.message}`;
+      }
+    });
+
+    // VLM extraction
+    $('#btn-extract').addEventListener('click', async () => {
+      if (!lastUploadedFile) return;
+
+      const btn = $('#btn-extract');
+      btn.disabled = true;
+      btn.textContent = 'Extracting...';
+
+      const form = new FormData();
+      form.append('file', lastUploadedFile);
+      form.append('floor_number', $('#admin-floor-num').value || '0');
+
+      try {
+        const res = await fetch(`${API}/api/admin/extract`, {
+          method: 'POST',
+          body: form,
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err);
+        }
+
+        const data = await res.json();
+        const comp = data.comparison;
+
+        const resultEl = $('#extract-result');
+        resultEl.classList.remove('hidden');
+
+        $('#extract-summary').innerHTML = `
+          <div class="space-y-1.5">
+            <p class="font-medium">Extracted ${data.vlm_data.pois?.length || 0} POIs, ${data.vlm_data.adjacencies?.length || 0} adjacencies</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-medium">
+                Recall: ${comp.poi_recall}%
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-accent-soft text-accent text-xs font-medium">
+                Matched: ${comp.matched} / ${comp.manual_pois}
+              </span>
+            </div>
+            ${comp.missed_by_vlm?.length ? `<p class="text-xs text-red-600">Missed: ${comp.missed_by_vlm.join(', ')}</p>` : ''}
+            ${comp.extra_in_vlm?.length ? `<p class="text-xs text-amber-600">Extra: ${comp.extra_in_vlm.join(', ')}</p>` : ''}
+          </div>
+        `;
+
+        $('#extract-json').textContent = JSON.stringify(data.vlm_data, null, 2);
+      } catch (err) {
+        const resultEl = $('#extract-result');
+        resultEl.classList.remove('hidden');
+        $('#extract-summary').innerHTML = `<p class="text-red-600 text-sm">Extraction failed: ${err.message}</p>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Extract with Vision AI';
+      }
+    });
+
+    // Compile routes
+    $('#btn-compile').addEventListener('click', async () => {
+      const btn = $('#btn-compile');
+      btn.disabled = true;
+
+      $('#compile-result').classList.add('hidden');
+      $('#compile-loading').classList.remove('hidden');
+
+      try {
+        const res = await fetch(`${API}/api/admin/compile`, { method: 'POST' });
+
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err);
+        }
+
+        const data = await res.json();
+        const s = data.stats;
+
+        $('#compile-loading').classList.add('hidden');
+        $('#compile-result').classList.remove('hidden');
+
+        $('#compile-output').innerHTML = `
+          <p class="font-medium text-green-700">Compilation complete</p>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
+            <span class="text-muted">POIs</span><span class="font-medium tabular-nums">${s.pois}</span>
+            <span class="text-muted">Edges</span><span class="font-medium tabular-nums">${s.edges}</span>
+            <span class="text-muted">Segments generated</span><span class="font-medium tabular-nums">${s.segments}</span>
+            <span class="text-muted">Full routes built</span><span class="font-medium tabular-nums">${s.routes}</span>
+            <span class="text-muted">Routes in database</span><span class="font-medium tabular-nums">${s.stored}</span>
+          </div>
+        `;
+
+        loadAdminStats();
+      } catch (err) {
+        $('#compile-loading').classList.add('hidden');
+        $('#compile-result').classList.remove('hidden');
+        $('#compile-output').innerHTML = `<p class="text-red-600 text-sm">Compilation failed: ${err.message}</p>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     // Init
     switchState('idle');
