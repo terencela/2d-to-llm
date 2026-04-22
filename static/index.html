@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="min-h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -103,7 +103,7 @@
     }
   </style>
 </head>
-<body class="h-full bg-surface font-sans text-ink antialiased">
+<body class="min-h-full bg-surface font-sans text-ink antialiased">
 
   <div id="app" class="min-h-[100dvh] flex flex-col">
 
@@ -754,6 +754,7 @@
       const bounds = [[0, 0], [1000, 1400]];
       leafletMap.fitBounds(bounds);
 
+      mapLayers.floor = L.layerGroup().addTo(leafletMap);
       mapLayers.edges = L.layerGroup().addTo(leafletMap);
       mapLayers.pois = L.layerGroup().addTo(leafletMap);
       mapLayers.labels = L.layerGroup().addTo(leafletMap);
@@ -797,9 +798,16 @@
     function renderMap(floor) {
       if (!leafletMap || !graphData) return;
 
+      mapLayers.floor.clearLayers();
       mapLayers.edges.clearLayers();
       mapLayers.pois.clearLayers();
       mapLayers.labels.clearLayers();
+
+      const floorMap = graphData.maps.find(m => m.floor === floor);
+      if (floorMap) {
+        const imgBounds = [[0, 0], [1000, 1400]];
+        L.imageOverlay(floorMap.url, imgBounds, { opacity: 0.7 }).addTo(mapLayers.floor);
+      }
 
       const floorPois = graphData.pois.filter(p => p.floor === floor);
       const floorPoiIds = new Set(floorPois.map(p => p.id));
@@ -951,10 +959,11 @@
         panel.classList.remove('hidden');
         loadAdminStats();
         loadMaps();
-        requestAnimationFrame(() => {
+        setTimeout(() => {
           initMap();
+          if (leafletMap) leafletMap.invalidateSize();
           panel.scrollIntoView({ behavior: 'smooth' });
-        });
+        }, 100);
       } else {
         panel.classList.add('hidden');
       }
