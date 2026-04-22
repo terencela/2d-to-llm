@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Zurich Airport Wayfinding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Geist', 'system-ui', 'sans-serif'] },
+          colors: {
+            ink: '#18181b',
+            faded: '#71717a',
+            muted: '#a1a1aa',
+            surface: '#fafafa',
+            elevated: '#ffffff',
+            border: '#e4e4e7',
+            'border-soft': '#f4f4f5',
+            accent: '#0369a1',
+            'accent-hover': '#0284c7',
+            'accent-soft': '#e0f2fe',
+            'accent-muted': '#bae6fd',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.4; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .mic-ring {
+      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .mic-breathe {
+      animation: breathe 3s ease-in-out infinite;
+    }
+    .mic-recording {
+      animation: breathe 0.8s ease-in-out infinite;
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+      animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer {
+      background: linear-gradient(90deg, #f4f4f5 25%, #e4e4e7 50%, #f4f4f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    .directions-text { white-space: pre-line; }
+  </style>
+</head>
+<body class="h-full bg-surface font-sans text-ink antialiased">
+
+  <div id="app" class="min-h-[100dvh] flex flex-col">
+
+    <!-- Header -->
+    <header class="px-5 pt-6 pb-4">
+      <div class="max-w-lg mx-auto">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-base font-semibold tracking-tight leading-none">Zurich Airport</h1>
+            <p class="text-xs text-muted mt-0.5">Wayfinding Assistant</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-1 flex flex-col px-5">
+      <div class="max-w-lg mx-auto w-full flex-1 flex flex-col">
+
+        <!-- State: Idle (default) -->
+        <div id="state-idle" class="flex-1 flex flex-col items-center justify-center gap-8 pb-12">
+          <div class="text-center space-y-2">
+            <h2 class="text-2xl font-semibold tracking-tight">Where do you need to go?</h2>
+            <p class="text-sm text-faded max-w-[280px] mx-auto leading-relaxed">
+              Tap the microphone and tell me where you are and where you want to go
+            </p>
+          </div>
+
+          <!-- Mic button -->
+          <div class="relative">
+            <div class="absolute inset-0 rounded-full bg-accent/20 mic-ring"></div>
+            <button
+              id="btn-mic"
+              class="relative w-20 h-20 rounded-full bg-accent text-white flex items-center justify-center mic-breathe active:scale-95 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              aria-label="Start recording"
+            >
+              <svg id="icon-mic" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+              <svg id="icon-stop" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Text input fallback -->
+          <div class="w-full max-w-sm">
+            <div class="relative">
+              <input
+                id="input-text"
+                type="text"
+                placeholder="Or type: Gate B32 to Starbucks"
+                class="w-full h-12 pl-4 pr-12 rounded-xl bg-white border border-border text-sm placeholder:text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+              />
+              <button
+                id="btn-text"
+                class="absolute right-1.5 top-1.5 w-9 h-9 rounded-lg bg-accent text-white flex items-center justify-center hover:bg-accent-hover active:scale-95 transition-all"
+                aria-label="Send"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m5 12h14"/>
+                  <path d="m12 5 7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- State: Recording -->
+        <div id="state-recording" class="flex-1 flex-col items-center justify-center gap-6 pb-12 hidden">
+          <div class="text-center space-y-2">
+            <h2 class="text-2xl font-semibold tracking-tight">Listening...</h2>
+            <p class="text-sm text-faded">Tell me where you are and where you want to go</p>
+          </div>
+
+          <div class="relative">
+            <div class="absolute inset-[-16px] rounded-full bg-red-500/15 mic-ring"></div>
+            <div class="absolute inset-[-8px] rounded-full bg-red-500/10 mic-ring" style="animation-delay: 0.5s"></div>
+            <button
+              id="btn-stop"
+              class="relative w-24 h-24 rounded-full bg-red-500 text-white flex items-center justify-center mic-recording active:scale-95 transition-transform focus:outline-none"
+              aria-label="Stop recording"
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+          </div>
+
+          <p id="recording-time" class="text-xs text-muted font-mono tabular-nums">0:00</p>
+        </div>
+
+        <!-- State: Loading -->
+        <div id="state-loading" class="flex-1 flex-col items-center justify-center gap-6 pb-12 hidden">
+          <div class="text-center space-y-2">
+            <h2 class="text-2xl font-semibold tracking-tight">Finding your route...</h2>
+            <p class="text-sm text-faded">Processing your request</p>
+          </div>
+          <div class="w-full max-w-xs space-y-3">
+            <div class="h-3 rounded-full shimmer"></div>
+            <div class="h-3 rounded-full shimmer w-4/5" style="animation-delay: 0.2s"></div>
+            <div class="h-3 rounded-full shimmer w-3/5" style="animation-delay: 0.4s"></div>
+          </div>
+        </div>
+
+        <!-- State: Result -->
+        <div id="state-result" class="flex-1 flex flex-col gap-4 pb-8 hidden">
+
+          <!-- Route header -->
+          <div id="result-header" class="animate-fade-up">
+            <div class="flex items-center gap-3 mb-1">
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-muted uppercase tracking-wider font-medium mb-1">Your route</p>
+                <div class="flex items-center gap-2 text-base font-semibold">
+                  <span id="result-start" class="truncate"></span>
+                  <svg class="flex-shrink-0 text-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m5 12h14"/><path d="m12 5 7 7-7 7"/>
+                  </svg>
+                  <span id="result-end" class="truncate"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floor badge -->
+          <div id="result-floor-wrap" class="animate-fade-up" style="animation-delay: 0.08s">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-soft text-accent text-xs font-medium">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>
+              </svg>
+              <span id="result-floor"></span>
+            </div>
+          </div>
+
+          <!-- Directions card -->
+          <div class="animate-fade-up rounded-2xl bg-white border border-border p-5" style="animation-delay: 0.15s">
+            <p id="result-directions" class="text-sm text-ink leading-relaxed directions-text"></p>
+          </div>
+
+          <!-- Audio player -->
+          <div id="result-audio-wrap" class="animate-fade-up hidden" style="animation-delay: 0.22s">
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-white border border-border">
+              <button id="btn-play" class="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center flex-shrink-0 hover:bg-accent-hover active:scale-95 transition-all" aria-label="Play audio">
+                <svg id="play-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                <svg id="pause-icon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-faded font-medium">Audio directions</p>
+                <div class="mt-1 h-1 rounded-full bg-border-soft overflow-hidden">
+                  <div id="audio-progress" class="h-full bg-accent rounded-full transition-all duration-200" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transcript (if voice) -->
+          <div id="result-transcript-wrap" class="animate-fade-up hidden" style="animation-delay: 0.28s">
+            <p class="text-xs text-muted"><span class="font-medium">You said:</span> <span id="result-transcript"></span></p>
+          </div>
+
+          <!-- New search button -->
+          <div class="animate-fade-up mt-2" style="animation-delay: 0.3s">
+            <button
+              id="btn-new"
+              class="w-full h-12 rounded-xl border border-border text-sm font-medium text-faded hover:text-ink hover:border-zinc-300 active:scale-[0.98] transition-all"
+            >
+              Ask another question
+            </button>
+          </div>
+        </div>
+
+        <!-- State: Error -->
+        <div id="state-error" class="flex-1 flex-col items-center justify-center gap-4 pb-12 hidden">
+          <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+          </div>
+          <div class="text-center space-y-1">
+            <h2 class="text-lg font-semibold">Something went wrong</h2>
+            <p id="error-message" class="text-sm text-faded max-w-[280px] mx-auto"></p>
+          </div>
+          <button id="btn-retry" class="mt-2 h-10 px-6 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent-hover active:scale-95 transition-all">
+            Try again
+          </button>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="px-5 py-4 border-t border-border-soft">
+      <div class="max-w-lg mx-auto flex items-center justify-between">
+        <p class="text-[11px] text-muted">Prototype - Not for production use</p>
+        <button id="btn-locations" class="text-[11px] text-accent font-medium hover:underline">View locations</button>
+      </div>
+    </footer>
+
+    <!-- Locations drawer -->
+    <div id="drawer-overlay" class="fixed inset-0 bg-black/30 z-40 hidden" style="backdrop-filter: blur(2px)"></div>
+    <div id="drawer" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl transform translate-y-full transition-transform duration-300 ease-out max-h-[70dvh] flex flex-col">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border-soft flex-shrink-0">
+        <h3 class="text-sm font-semibold">Available Locations</h3>
+        <button id="btn-close-drawer" class="w-8 h-8 rounded-lg hover:bg-surface flex items-center justify-center transition-colors" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div id="drawer-content" class="overflow-y-auto px-5 py-4 space-y-4"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = '';
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingStart = 0;
+    let recordingTimer = null;
+    let currentAudio = null;
+
+    const $ = (sel) => document.querySelector(sel);
+    const show = (el) => { el.classList.remove('hidden'); el.classList.add('flex'); };
+    const hide = (el) => { el.classList.add('hidden'); el.classList.remove('flex'); };
+
+    const states = {
+      idle: $('#state-idle'),
+      recording: $('#state-recording'),
+      loading: $('#state-loading'),
+      result: $('#state-result'),
+      error: $('#state-error'),
+    };
+
+    function switchState(name) {
+      Object.values(states).forEach(hide);
+      show(states[name]);
+    }
+
+    // --- Recording ---
+    $('#btn-mic').addEventListener('click', startRecording);
+    $('#btn-stop').addEventListener('click', stopRecording);
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          clearInterval(recordingTimer);
+          const blob = new Blob(audioChunks, { type: mimeType });
+          sendVoice(blob);
+        };
+
+        mediaRecorder.start(250);
+        recordingStart = Date.now();
+        recordingTimer = setInterval(updateRecordingTime, 100);
+        switchState('recording');
+      } catch (err) {
+        showError('Microphone access denied. Please allow microphone access and try again.');
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        switchState('loading');
+      }
+    }
+
+    function updateRecordingTime() {
+      const elapsed = Math.floor((Date.now() - recordingStart) / 1000);
+      const m = Math.floor(elapsed / 60);
+      const s = elapsed % 60;
+      $('#recording-time').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // --- Text input ---
+    $('#btn-text').addEventListener('click', sendText);
+    $('#input-text').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendText();
+    });
+
+    async function sendText() {
+      const query = $('#input-text').value.trim();
+      if (!query) return;
+
+      switchState('loading');
+      try {
+        const res = await fetch(`${API}/api/directions/text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        showResult(data);
+      } catch (err) {
+        showError(err.message || 'Failed to get directions. Check your connection and try again.');
+      }
+    }
+
+    async function sendVoice(blob) {
+      const form = new FormData();
+      form.append('audio', blob, 'recording.webm');
+
+      try {
+        const res = await fetch(`${API}/api/directions/voice`, {
+          method: 'POST',
+          body: form,
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        showResult(data);
+      } catch (err) {
+        showError(err.message || 'Failed to process recording. Try again.');
+      }
+    }
+
+    // --- Results ---
+    function showResult(data) {
+      $('#result-start').textContent = data.start_poi || 'Unknown';
+      $('#result-end').textContent = data.end_poi || 'Unknown';
+      $('#result-directions').textContent = data.directions || 'No directions available.';
+
+      if (data.floor_info) {
+        $('#result-floor').textContent = data.floor_info;
+        show($('#result-floor-wrap'));
+      } else {
+        hide($('#result-floor-wrap'));
+      }
+
+      if (data.audio_url) {
+        show($('#result-audio-wrap'));
+        setupAudio(data.audio_url);
+      } else {
+        hide($('#result-audio-wrap'));
+      }
+
+      if (data.transcript) {
+        $('#result-transcript').textContent = data.transcript;
+        show($('#result-transcript-wrap'));
+      } else {
+        hide($('#result-transcript-wrap'));
+      }
+
+      switchState('result');
+    }
+
+    function setupAudio(url) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      currentAudio = new Audio(url);
+      const playIcon = $('#play-icon');
+      const pauseIcon = $('#pause-icon');
+      const progress = $('#audio-progress');
+
+      currentAudio.ontimeupdate = () => {
+        if (currentAudio.duration) {
+          progress.style.width = `${(currentAudio.currentTime / currentAudio.duration) * 100}%`;
+        }
+      };
+
+      currentAudio.onended = () => {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        progress.style.width = '0%';
+      };
+
+      $('#btn-play').onclick = () => {
+        if (currentAudio.paused) {
+          currentAudio.play();
+          playIcon.classList.add('hidden');
+          pauseIcon.classList.remove('hidden');
+        } else {
+          currentAudio.pause();
+          playIcon.classList.remove('hidden');
+          pauseIcon.classList.add('hidden');
+        }
+      };
+    }
+
+    // --- Error ---
+    function showError(message) {
+      $('#error-message').textContent = message;
+      switchState('error');
+    }
+
+    // --- Navigation ---
+    $('#btn-new').addEventListener('click', reset);
+    $('#btn-retry').addEventListener('click', reset);
+
+    function reset() {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      $('#input-text').value = '';
+      switchState('idle');
+    }
+
+    // --- Locations drawer ---
+    $('#btn-locations').addEventListener('click', openDrawer);
+    $('#btn-close-drawer').addEventListener('click', closeDrawer);
+    $('#drawer-overlay').addEventListener('click', closeDrawer);
+
+    async function openDrawer() {
+      const drawer = $('#drawer');
+      const overlay = $('#drawer-overlay');
+      const content = $('#drawer-content');
+
+      try {
+        const res = await fetch(`${API}/api/pois`);
+        const pois = await res.json();
+
+        const byFloor = {};
+        pois.forEach(p => {
+          if (!byFloor[p.floor_name]) byFloor[p.floor_name] = [];
+          byFloor[p.floor_name].push(p.name);
+        });
+
+        content.innerHTML = Object.entries(byFloor).map(([floor, names]) => `
+          <div>
+            <p class="text-xs text-muted uppercase tracking-wider font-medium mb-2">${floor}</p>
+            <div class="flex flex-wrap gap-1.5">
+              ${names.map(n => `<span class="px-2.5 py-1 rounded-lg bg-surface text-xs text-ink font-medium">${n}</span>`).join('')}
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        content.innerHTML = '<p class="text-sm text-faded">Could not load locations.</p>';
+      }
+
+      overlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        drawer.style.transform = 'translateY(0)';
+      });
+    }
+
+    function closeDrawer() {
+      $('#drawer').style.transform = 'translateY(100%)';
+      setTimeout(() => $('#drawer-overlay').classList.add('hidden'), 300);
+    }
+
+    // Init
+    switchState('idle');
+  </script>
+</body>
+</html>

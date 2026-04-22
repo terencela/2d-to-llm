@@ -173,7 +173,6 @@ def get_poi_list():
 def build_ui() -> gr.Blocks:
     with gr.Blocks(
         title="Airport Wayfinding",
-        theme=gr.themes.Soft(),
     ) as demo:
         gr.Markdown("# Airport Wayfinding System")
 
@@ -286,4 +285,4 @@ if __name__ == "__main__":
     atexit.register(cleanup_temp_files)
     init_app()
     demo = build_ui()
-    demo.launch()
+    demo.launch(theme=gr.themes.Soft())
